@@ -98,7 +98,8 @@ Blockly.Python['uno_uart_init'] = function (block) {
   var rx = block.getFieldValue('RX');
   var baudrate = block.getFieldValue('BAUDRATE');
   Blockly.Python.definitions_['import_machine'] = 'import machine';
-  var code = 'uart = machine.UART(2, baudrate=' + baudrate + ', rx=' + rx + '_PIN, tx=' + tx + '_PIN)\nuart.init(parity=None, stop=1, bits=8)\n';
+  Blockly.Python.definitions_['create_UART']= 'uart = machine.UART(2, baudrate=' + baudrate + ', rx=' + rx + '_PIN, tx=' + tx + '_PIN)\nuart.init(parity=None, stop=1, bits=8)\n';
+  var code = '';
   return code;
 };
 
@@ -150,7 +151,7 @@ Blockly.Python['uno_uart_read_until'] = function (block) {
       "  return result",
     ]);
 
-  var code = cbFunctionName + '("' + eol + '")';
+  var code = "await " + cbFunctionName + '("' + eol + '")';
   return [code, Blockly.Python.ORDER_NONE];
 };
 
@@ -234,15 +235,21 @@ Blockly.Blocks["uno_uart_write_bytes"] = {
 };
 
 Blockly.Python['uno_uart_write_bytes'] = function (block) {
-  // TODO: Assemble Python into code variable.
-  Blockly.Python.definitions_['import_ubinascii'] = 'import ubinascii';
-  var bytes = Blockly.Python.valueToCode(block, 'BYTES', Blockly.Python.ORDER_ATOMIC);
-  var bytes_after = bytes.split(",");
-  bytes_after = bytes.split(" ");
-  console.log(bytes_after);
-  //var code = 'uart.write(bytearray([' + bytes.split(",") + ']))\n';
-  var code = 'uart.write(bytearray([' + bytes_after + ']))\n';
+  var raw_input = Blockly.Python.valueToCode(block, 'BYTES', Blockly.Python.ORDER_ATOMIC) || '""';
+
+  // Bỏ dấu nháy đầu và cuối nếu có (có thể là ' hoặc ")
+  if ((raw_input.startsWith('"') && raw_input.endsWith('"')) ||
+      (raw_input.startsWith("'") && raw_input.endsWith("'"))) {
+    raw_input = raw_input.slice(1, -1);
+  }
+
+  // Làm sạch chuỗi: loại bỏ khoảng trắng dư và giữ nguyên định dạng hex
+  var cleaned = raw_input.replace(/\s+/g, '');
+
+  // Tạo mã Python
+  var code = 'uart.write(bytearray([' + cleaned + ']))\n';
   return code;
+
 };
 
 Blockly.Blocks["uno_uart_check_data"] = {
@@ -284,4 +291,4 @@ Blockly.Python['uno_uart_deinit'] = function (block) {
   // TODO: Assemble Python into code variable.
   var code = 'uart.deinit()\n';
   return code;
-};
+};``
